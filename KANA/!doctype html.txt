@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ja" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Form</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    
+    .typing-text {
+      animation: fadeIn 0.5s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .cursor {
+      animation: blink 0.7s infinite;
+    }
+    
+    .fade-in-character-left {
+      animation: fadeIn 1s ease-out 2s forwards;
+      opacity: 0;
+    }
+    
+    .fade-in-character-right {
+      animation: fadeIn 1s ease-out 2.8s forwards;
+      opacity: 0;
+    }
+    
+    .fade-in-form {
+      animation: fadeIn 1s ease-out 3.8s forwards;
+      opacity: 0;
+    }
+    
+    .success-message {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full m-0 p-0">
+  <main class="w-full h-full flex items-center justify-center p-6 overflow-auto" id="main-container">
+   <div class="w-full max-w-md"><!-- Typing Text -->
+    <div class="text-center mb-8 typing-text" id="typing-text">
+     <h2 class="text-4xl font-bold" style="color: #FF69B4;"><span id="typed-text"></span><span id="cursor" class="cursor">|</span></h2>
+    </div><!-- Character Images -->
+    <div class="flex justify-center gap-8 mb-8"><!-- Left Character -->
+     <div class="fade-in-character-left">
+      <svg width="100" height="100" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><!-- Cute character 1 --> <circle cx="60" cy="60" r="50" fill="#FFB6C1" /> <!-- Eyes --> <circle cx="45" cy="55" r="5" fill="#333" /> <circle cx="75" cy="55" r="5" fill="#333" /> <!-- Smile --> <path d="M 40 70 Q 60 85 80 70" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round" /> <!-- Blush --> <circle cx="35" cy="65" r="6" fill="#FF69B4" opacity="0.4" /> <circle cx="85" cy="65" r="6" fill="#FF69B4" opacity="0.4" /> <!-- Hair bow --> <circle cx="30" cy="30" r="8" fill="#FF1493" /> <circle cx="42" cy="30" r="8" fill="#FF1493" />
+      </svg>
+     </div><!-- Right Character -->
+     <div class="fade-in-character-right">
+      <svg width="100" height="100" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><!-- Cute character 2 --> <circle cx="60" cy="60" r="50" fill="#DDA0DD" /> <!-- Eyes --> <circle cx="45" cy="55" r="5" fill="#333" /> <circle cx="75" cy="55" r="5" fill="#333" /> <!-- Smile --> <path d="M 40 70 Q 60 85 80 70" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round" /> <!-- Blush --> <circle cx="35" cy="65" r="6" fill="#DA70D6" opacity="0.4" /> <circle cx="85" cy="65" r="6" fill="#DA70D6" opacity="0.4" /> <!-- Hair bow --> <circle cx="85" cy="30" r="8" fill="#9370DB" /> <circle cx="97" cy="30" r="8" fill="#9370DB" />
+      </svg>
+     </div>
+    </div><!-- Form Container -->
+    <div class="fade-in-form">
+     <h1 id="form-title" class="text-3xl font-bold text-center mb-8" style="color: #FF69B4;">メッセージを送信</h1>
+     <form id="message-form" class="space-y-6">
+      <div><label for="message-input" class="block text-sm font-medium mb-2" style="color: #333;">メッセージ</label> <textarea id="message-input" rows="5" class="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all" style="border-color: #FFB6C1; background-color: #FFF;" placeholder="メッセージを入力してください" required></textarea>
+      </div><button type="submit" id="submit-button" class="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" style="background-color: #FF69B4;"> <span id="button-text">送信</span> <span id="loading-spinner" class="hidden ml-2">
+        <svg class="inline w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg></span> </button>
+     </form><!-- Success Message -->
+     <div id="success-message" class="hidden mt-6 p-4 rounded-lg text-center" style="background-color: #FFE4E1; color: #FF69B4;">
+      <p class="font-semibold text-xl mb-4">プレゼントはまだあるよ🎁</p><button id="download-button" class="px-6 py-3 rounded-lg font-semibold text-white transition-all transform hover:scale-105" style="background-color: #FF69B4;"> ここをクリック </button>
+     </div><!-- Error Message -->
+     <div id="error-message" class="hidden mt-6 p-4 rounded-lg text-center" style="background-color: #FFEBEE; color: #C62828;">
+      <p class="font-semibold">エラーが発生しました</p>
+      <p class="text-sm mt-1" id="error-text"></p>
+     </div>
+    </div>
+   </div>
+  </main>
+  <script>
+    const defaultConfig = {
+      background_color: "#FFF5F7",
+      primary_color: "#FF69B4",
+      text_color: "#333333",
+      form_title: "メッセージを送信",
+      button_text: "送信",
+      placeholder_text: "メッセージを入力してください",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    let allMessages = [];
+    let isInitialized = false;
+
+    // Typing animation
+    const textToType = "お兄ちゃん♡";
+    let charIndex = 0;
+    
+    function typeText() {
+      if (charIndex < textToType.length) {
+        document.getElementById('typed-text').textContent += textToType.charAt(charIndex);
+        charIndex++;
+        setTimeout(typeText, 150);
+      } else {
+        setTimeout(() => {
+          document.getElementById('cursor').style.display = 'none';
+        }, 500);
+      }
+    }
+    
+    setTimeout(typeText, 500);
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allMessages = data;
+        console.log('Messages updated:', data.length);
+      }
+    };
+
+    async function initializeApp() {
+      if (window.dataSdk) {
+        const initResult = await window.dataSdk.init(dataHandler);
+        if (!initResult.isOk) {
+          console.error("Failed to initialize data SDK:", initResult.error);
+          showError("データの初期化に失敗しました");
+          return;
+        }
+        isInitialized = true;
+      }
+    }
+
+    async function onConfigChange(config) {
+      const mainContainer = document.getElementById('main-container');
+      const formTitle = document.getElementById('form-title');
+      const messageInput = document.getElementById('message-input');
+      const buttonTextSpan = document.getElementById('button-text');
+      const submitButton = document.getElementById('submit-button');
+      
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+      
+      mainContainer.style.backgroundColor = backgroundColor;
+      mainContainer.style.fontFamily = `${fontFamily}, system-ui, -apple-system, sans-serif`;
+      
+      formTitle.textContent = config.form_title || defaultConfig.form_title;
+      formTitle.style.color = primaryColor;
+      formTitle.style.fontSize = `${fontSize * 1.875}px`;
+      
+      buttonTextSpan.textContent = config.button_text || defaultConfig.button_text;
+      submitButton.style.backgroundColor = primaryColor;
+      submitButton.style.fontSize = `${fontSize}px`;
+      
+      messageInput.placeholder = config.placeholder_text || defaultConfig.placeholder_text;
+      messageInput.style.fontSize = `${fontSize}px`;
+      messageInput.style.color = textColor;
+      
+      document.querySelectorAll('label').forEach(label => {
+        label.style.color = textColor;
+        label.style.fontSize = `${fontSize * 0.875}px`;
+      });
+    }
+
+    function showSuccess() {
+      const successMessage = document.getElementById('success-message');
+      const errorMessage = document.getElementById('error-message');
+      const formContainer = document.querySelector('.fade-in-form');
+      const typingText = document.getElementById('typing-text');
+      
+      errorMessage.classList.add('hidden');
+      
+      // Hide form title, form, and typing text
+      document.getElementById('form-title').style.display = 'none';
+      document.getElementById('message-form').style.display = 'none';
+      typingText.style.display = 'none';
+      
+      successMessage.classList.remove('hidden');
+      successMessage.classList.add('success-message');
+    }
+    
+    // Download functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const downloadButton = document.getElementById('download-button');
+      
+      downloadButton.addEventListener('click', () => {
+        // Create a sample image (pink heart)
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 800;
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = '#FFF5F7';
+        ctx.fillRect(0, 0, 800, 800);
+        
+        // Draw a heart
+        ctx.fillStyle = '#FF69B4';
+        ctx.beginPath();
+        ctx.moveTo(400, 300);
+        ctx.bezierCurveTo(400, 250, 350, 200, 300, 200);
+        ctx.bezierCurveTo(250, 200, 200, 250, 200, 300);
+        ctx.bezierCurveTo(200, 350, 250, 400, 400, 500);
+        ctx.bezierCurveTo(550, 400, 600, 350, 600, 300);
+        ctx.bezierCurveTo(600, 250, 550, 200, 500, 200);
+        ctx.bezierCurveTo(450, 200, 400, 250, 400, 300);
+        ctx.fill();
+        
+        // Add text
+        ctx.fillStyle = '#FF1493';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Ridoi ♡', 400, 600);
+        
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'present.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      });
+    });
+
+    function showError(message) {
+      const successMessage = document.getElementById('success-message');
+      const errorMessage = document.getElementById('error-message');
+      const errorText = document.getElementById('error-text');
+      
+      successMessage.classList.add('hidden');
+      errorText.textContent = message;
+      errorMessage.classList.remove('hidden');
+      
+      setTimeout(() => {
+        errorMessage.classList.add('hidden');
+      }, 5000);
+    }
+
+    function setLoading(isLoading) {
+      const submitButton = document.getElementById('submit-button');
+      const buttonText = document.getElementById('button-text');
+      const loadingSpinner = document.getElementById('loading-spinner');
+      
+      submitButton.disabled = isLoading;
+      
+      if (isLoading) {
+        buttonText.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+      } else {
+        buttonText.classList.remove('hidden');
+        loadingSpinner.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('message-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!isInitialized) {
+        showError('データSDKが初期化されていません');
+        return;
+      }
+      
+      if (allMessages.length >= 999) {
+        showError('メッセージの上限（999件）に   しました。古いメッセージを削除してください。');
+        return;
+      }
+      
+      const messageInput = document.getElementById('message-input');
+      const message = messageInput.value.trim();
+      
+      if (!message) {
+        showError('メッセージを入力してください');
+        return;
+      }
+      
+      setLoading(true);
+      
+      const newMessage = {
+        id: Date.now().toString(),
+        message: message,
+        timestamp: new Date().toISOString()
+      };
+      
+      const result = await window.dataSdk.create(newMessage);
+      
+      setLoading(false);
+      
+      if (result.isOk) {
+        messageInput.value = '';
+        showSuccess();
+      } else {
+        showError('送信に失敗しました。もう一度お試しください。');
+      }
+    });
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                window.elementSdk.config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                window.elementSdk.config.primary_color = value;
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                window.elementSdk.config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              window.elementSdk.config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              window.elementSdk.config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["form_title", config.form_title || defaultConfig.form_title],
+          ["button_text", config.button_text || defaultConfig.button_text],
+          ["placeholder_text", config.placeholder_text || defaultConfig.placeholder_text]
+        ])
+      });
+    }
+
+    initializeApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab83aad63f5d41f',t:'MTc2NTMyMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
