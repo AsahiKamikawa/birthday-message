@@ -10,7 +10,7 @@ const TYPING_TEXT = 'お兄ちゃん…♡';
 const TYPING_SPEED = 150; // ミリ秒
 
 // 画像URL（プロジェクトフォルダ内の画像を使用）
-const SECRET_IMAGE_URL = './secret-image.jpg';
+const SECRET_IMAGE_URL = './secret-image.JPG';
 
 // ========================================
 // タイピングアニメーション
